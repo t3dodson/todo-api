@@ -17,7 +17,6 @@ const setupDb = async () => {
     });
 
     const Schema = mongoose.Schema;
-    const ObjectId = Schema.ObjectId;
     
     const TodoSchema = new Schema({
         description: String,
@@ -28,18 +27,32 @@ const setupDb = async () => {
 };
 
 setupDb().then(Todo => {
+    app.get('/todo', async (req, res) => {
+        const todos = await Todo.find({});
+        return res.json({
+            todos: todos.map(({ _id, description, done }) => ({
+                id: _id,
+                description,
+                done
+            }))
+        });
+    });
+    
     app.post('/todo', (req, res) => {
         console.log('Got body:', req.body);
         const { description } = req.body;
-        //const todo = new Todo();
-        //todo.description = 'hello world';
-        //todo.done = false;
-        //todo.save();
-        res.json(description);
+        const todo = new Todo();
+        todo.description = description;
+        todo.done = false;
+        todo.save();
+        return res.status(201).end();
     });
 
-    app.put('/todo', (req, res) => {
-
+    app.put('/todo/:id', async (req, res) => {
+        const { id } = req.params;
+        const { description, done } = req.body;
+        await Todo.replaceOne({ _id: id }, { description, done });
+        return res.status(200).end();
     });
 
     app.listen(port, () => {
